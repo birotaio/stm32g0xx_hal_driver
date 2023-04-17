@@ -883,67 +883,44 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint
     __HAL_SPI_ENABLE(hspi);
   }
 
-  /* Transmit data in 16 Bit mode */
-  if (hspi->Init.DataSize > SPI_DATASIZE_8BIT)
+  /* Transmit data  */
+  if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (initial_TxXferCount == 0x01U))
   {
-    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (initial_TxXferCount == 0x01U))
-    {
+    if (hspi->Init.DataSize > SPI_DATASIZE_8BIT) {
       hspi->Instance->DR = *((uint16_t *)hspi->pTxBuffPtr);
       hspi->pTxBuffPtr += sizeof(uint16_t);
-      hspi->TxXferCount--;
-    }
-    /* Transmit data in 16 Bit mode */
-    while (hspi->TxXferCount > 0U)
-    {
-      /* Wait until TXE flag is set to send data */
-      if (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_TXE))
-      {
-        hspi->Instance->DR = *((uint16_t *)hspi->pTxBuffPtr);
-        hspi->pTxBuffPtr += sizeof(uint16_t);
-        hspi->TxXferCount--;
-      }
-      else
-      {
-        /* Timeout management */
-        if ((((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY)) || (Timeout == 0U))
-        {
-          errorcode = HAL_TIMEOUT;
-          hspi->State = HAL_SPI_STATE_READY;
-          goto error;
-        }
-      }
-    }
-  }
-  /* Transmit data in 8 Bit mode */
-  else
-  {
-    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (initial_TxXferCount == 0x01U))
-    {
-      *((__IO uint8_t *)&hspi->Instance->DR) = (*hspi->pTxBuffPtr);
+    } else {
+      *((__IO uint8_t *)&hspi->Instance->DR) = *hspi->pTxBuffPtr;
       hspi->pTxBuffPtr += sizeof(uint8_t);
+    }
+    hspi->TxXferCount--;
+  }
+  while (hspi->TxXferCount > 0U)
+  {
+    /* Wait until TXE flag is set to send data */
+    if (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_TXE))
+    {
+      if (hspi->Init.DataSize > SPI_DATASIZE_8BIT) {
+        hspi->Instance->DR = *((uint16_t *)hspi->pTxBuffPtr);
+	hspi->pTxBuffPtr += sizeof(uint16_t);
+      } else {
+        *((__IO uint8_t *)&hspi->Instance->DR) = *hspi->pTxBuffPtr;
+        hspi->pTxBuffPtr += sizeof(uint8_t);
+      }
       hspi->TxXferCount--;
     }
-    while (hspi->TxXferCount > 0U)
+    else
     {
-      /* Wait until TXE flag is set to send data */
-      if (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_TXE))
+      /* Timeout management */
+      if ((((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY)) || (Timeout == 0U))
       {
-        *((__IO uint8_t *)&hspi->Instance->DR) = (*hspi->pTxBuffPtr);
-        hspi->pTxBuffPtr += sizeof(uint8_t);
-        hspi->TxXferCount--;
-      }
-      else
-      {
-        /* Timeout management */
-        if ((((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY)) || (Timeout == 0U))
-        {
-          errorcode = HAL_TIMEOUT;
-          hspi->State = HAL_SPI_STATE_READY;
-          goto error;
-        }
+        errorcode = HAL_TIMEOUT;
+        hspi->State = HAL_SPI_STATE_READY;
+        goto error;
       }
     }
   }
+
 #if (USE_SPI_CRC != 0U)
   /* Enable CRC Transmission */
   if (hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
@@ -1074,53 +1051,29 @@ HAL_StatusTypeDef HAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
     __HAL_SPI_ENABLE(hspi);
   }
 
-  /* Receive data in 8 Bit mode */
-  if (hspi->Init.DataSize <= SPI_DATASIZE_8BIT)
+  /* Receive loop */
+  while (hspi->RxXferCount > 0U)
   {
-    /* Transfer loop */
-    while (hspi->RxXferCount > 0U)
+    /* Check the RXNE flag */
+    if (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_RXNE))
     {
-      /* Check the RXNE flag */
-      if (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_RXNE))
-      {
-        /* read the received data */
-        (* (uint8_t *)hspi->pRxBuffPtr) = *(__IO uint8_t *)&hspi->Instance->DR;
-        hspi->pRxBuffPtr += sizeof(uint8_t);
-        hspi->RxXferCount--;
-      }
-      else
-      {
-        /* Timeout management */
-        if ((((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY)) || (Timeout == 0U))
-        {
-          errorcode = HAL_TIMEOUT;
-          hspi->State = HAL_SPI_STATE_READY;
-          goto error;
-        }
-      }
-    }
-  }
-  else
-  {
-    /* Transfer loop */
-    while (hspi->RxXferCount > 0U)
-    {
-      /* Check the RXNE flag */
-      if (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_RXNE))
-      {
+      if (hspi->Init.DataSize > SPI_DATASIZE_8BIT) {
         *((uint16_t *)hspi->pRxBuffPtr) = (uint16_t)hspi->Instance->DR;
         hspi->pRxBuffPtr += sizeof(uint16_t);
-        hspi->RxXferCount--;
+      } else {
+        *((uint8_t *)hspi->pRxBuffPtr) = hspi->Instance->DR;
+        hspi->pRxBuffPtr += sizeof(uint8_t);
       }
-      else
+      hspi->RxXferCount--;
+    }
+    else
+    {
+      /* Timeout management */
+      if ((((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY)) || (Timeout == 0U))
       {
-        /* Timeout management */
-        if ((((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY)) || (Timeout == 0U))
-        {
-          errorcode = HAL_TIMEOUT;
-          hspi->State = HAL_SPI_STATE_READY;
-          goto error;
-        }
+        errorcode = HAL_TIMEOUT;
+        hspi->State = HAL_SPI_STATE_READY;
+        goto error;
       }
     }
   }
@@ -1329,106 +1282,67 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
     __HAL_SPI_ENABLE(hspi);
   }
 
-  /* Transmit and Receive data in 16 Bit mode */
-  if (hspi->Init.DataSize > SPI_DATASIZE_8BIT)
+  /* Transmit and Receive data */
+  if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (initial_TxXferCount == 0x01U))
   {
-    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (initial_TxXferCount == 0x01U))
-    {
+    if (hspi->Init.DataSize > SPI_DATASIZE_8BIT) {
       hspi->Instance->DR = *((uint16_t *)hspi->pTxBuffPtr);
       hspi->pTxBuffPtr += sizeof(uint16_t);
-      hspi->TxXferCount--;
-    }
-    while ((hspi->TxXferCount > 0U) || (hspi->RxXferCount > 0U))
-    {
-      /* Check TXE flag */
-      if ((__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_TXE)) && (hspi->TxXferCount > 0U) && (txallowed == 1U))
-      {
-        hspi->Instance->DR = *((uint16_t *)hspi->pTxBuffPtr);
-        hspi->pTxBuffPtr += sizeof(uint16_t);
-        hspi->TxXferCount--;
-        /* Next Data is a reception (Rx). Tx not allowed */
-        txallowed = 0U;
-
-#if (USE_SPI_CRC != 0U)
-        /* Enable CRC Transmission */
-        if ((hspi->TxXferCount == 0U) && (hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE))
-        {
-          /* Set NSS Soft to received correctly the CRC on slave mode with NSS pulse activated */
-          if ((READ_BIT(spi_cr1, SPI_CR1_MSTR) == 0U) && (READ_BIT(spi_cr2, SPI_CR2_NSSP) == SPI_CR2_NSSP))
-          {
-            SET_BIT(hspi->Instance->CR1, SPI_CR1_SSM);
-          }
-          SET_BIT(hspi->Instance->CR1, SPI_CR1_CRCNEXT);
-        }
-#endif /* USE_SPI_CRC */
-      }
-
-      /* Check RXNE flag */
-      if ((__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_RXNE)) && (hspi->RxXferCount > 0U))
-      {
-        *((uint16_t *)hspi->pRxBuffPtr) = (uint16_t)hspi->Instance->DR;
-        hspi->pRxBuffPtr += sizeof(uint16_t);
-        hspi->RxXferCount--;
-        /* Next Data is a Transmission (Tx). Tx is allowed */
-        txallowed = 1U;
-      }
-      if (((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY))
-      {
-        errorcode = HAL_TIMEOUT;
-        hspi->State = HAL_SPI_STATE_READY;
-        goto error;
-      }
-    }
-  }
-  /* Transmit and Receive data in 8 Bit mode */
-  else
-  {
-    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (initial_TxXferCount == 0x01U))
-    {
+    } else {
       *((__IO uint8_t *)&hspi->Instance->DR) = (*hspi->pTxBuffPtr);
       hspi->pTxBuffPtr += sizeof(uint8_t);
-      hspi->TxXferCount--;
     }
-    while ((hspi->TxXferCount > 0U) || (hspi->RxXferCount > 0U))
+    hspi->TxXferCount--;
+  }
+  while ((hspi->TxXferCount > 0U) || (hspi->RxXferCount > 0U))
+  {
+    /* Check TXE flag */
+    if ((__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_TXE)) && (hspi->TxXferCount > 0U) && (txallowed == 1U))
     {
-      /* Check TXE flag */
-      if ((__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_TXE)) && (hspi->TxXferCount > 0U) && (txallowed == 1U))
-      {
-        *(__IO uint8_t *)&hspi->Instance->DR = (*hspi->pTxBuffPtr);
-        hspi->pTxBuffPtr++;
-        hspi->TxXferCount--;
-        /* Next Data is a reception (Rx). Tx not allowed */
-        txallowed = 0U;
+      if (hspi->Init.DataSize > SPI_DATASIZE_8BIT) {
+        hspi->Instance->DR = *((uint16_t *)hspi->pTxBuffPtr);
+        hspi->pTxBuffPtr += sizeof(uint16_t);
+      } else {
+        *((__IO uint8_t *)&hspi->Instance->DR) = *hspi->pTxBuffPtr;
+        hspi->pTxBuffPtr += sizeof(uint8_t);
+      }
+      hspi->TxXferCount--;
+      /* Next Data is a reception (Rx). Tx not allowed */
+      txallowed = 0U;
 
 #if (USE_SPI_CRC != 0U)
-        /* Enable CRC Transmission */
-        if ((hspi->TxXferCount == 0U) && (hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE))
+      /* Enable CRC Transmission */
+      if ((hspi->TxXferCount == 0U) && (hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE))
+      {
+        /* Set NSS Soft to received correctly the CRC on slave mode with NSS pulse activated */
+        if ((READ_BIT(spi_cr1, SPI_CR1_MSTR) == 0U) && (READ_BIT(spi_cr2, SPI_CR2_NSSP) == SPI_CR2_NSSP))
         {
-          /* Set NSS Soft to received correctly the CRC on slave mode with NSS pulse activated */
-          if ((READ_BIT(spi_cr1, SPI_CR1_MSTR) == 0U) && (READ_BIT(spi_cr2, SPI_CR2_NSSP) == SPI_CR2_NSSP))
-          {
-            SET_BIT(hspi->Instance->CR1, SPI_CR1_SSM);
-          }
-          SET_BIT(hspi->Instance->CR1, SPI_CR1_CRCNEXT);
+          SET_BIT(hspi->Instance->CR1, SPI_CR1_SSM);
         }
+        SET_BIT(hspi->Instance->CR1, SPI_CR1_CRCNEXT);
+      }
 #endif /* USE_SPI_CRC */
-      }
+    }
 
-      /* Wait until RXNE flag is reset */
-      if ((__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_RXNE)) && (hspi->RxXferCount > 0U))
-      {
-        (*(uint8_t *)hspi->pRxBuffPtr) = *(__IO uint8_t *)&hspi->Instance->DR;
-        hspi->pRxBuffPtr++;
-        hspi->RxXferCount--;
-        /* Next Data is a Transmission (Tx). Tx is allowed */
-        txallowed = 1U;
+    /* Check RXNE flag */
+    if ((__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_RXNE)) && (hspi->RxXferCount > 0U))
+    {
+      if (hspi->Init.DataSize > SPI_DATASIZE_8BIT) {
+        *((uint16_t *)hspi->pRxBuffPtr) = (uint16_t)hspi->Instance->DR;
+        hspi->pRxBuffPtr += sizeof(uint16_t);
+      } else {
+        *((uint8_t *)hspi->pRxBuffPtr) = (uint8_t)hspi->Instance->DR;
+        hspi->pRxBuffPtr += sizeof(uint8_t);
       }
-      if ((((HAL_GetTick() - tickstart) >=  Timeout) && ((Timeout != HAL_MAX_DELAY))) || (Timeout == 0U))
-      {
-        errorcode = HAL_TIMEOUT;
-        hspi->State = HAL_SPI_STATE_READY;
-        goto error;
-      }
+      hspi->RxXferCount--;
+      /* Next Data is a Transmission (Tx). Tx is allowed */
+      txallowed = 1U;
+    }
+    if (((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY))
+    {
+      errorcode = HAL_TIMEOUT;
+      hspi->State = HAL_SPI_STATE_READY;
+      goto error;
     }
   }
 
