@@ -3083,8 +3083,17 @@ typedef struct
 
 /* Initialization and de-initialization functions  ******************************/
 HAL_StatusTypeDef HAL_RCC_DeInit(void);
-HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef *RCC_OscInitStruct);
+
 HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef *RCC_ClkInitStruct, uint32_t FLatency);
+
+/* Try not to use this function, it is actually super heavy. Prefer the custom alternatives, in this order */
+HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef *RCC_OscInitStruct);
+HAL_StatusTypeDef HAL_Custom_RCC_HSEConfig(RCC_OscInitTypeDef *RCC_OscInitStruct);
+HAL_StatusTypeDef HAL_Custom_RCC_HSIConfig(RCC_OscInitTypeDef *RCC_OscInitStruct);
+HAL_StatusTypeDef HAL_Custom_RCC_LSIConfig(RCC_OscInitTypeDef *RCC_OscInitStruct);
+HAL_StatusTypeDef HAL_Custom_RCC_LSEConfig(RCC_OscInitTypeDef *RCC_OscInitStruct);
+HAL_StatusTypeDef HAL_Custom_RCC_HSI48Config(RCC_OscInitTypeDef *RCC_OscInitStruct);
+HAL_StatusTypeDef HAL_Custom_RCC_PLLConfig(RCC_OscInitTypeDef *RCC_OscInitStruct);
 
 /**
   * @}
