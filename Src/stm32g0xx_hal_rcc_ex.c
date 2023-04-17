@@ -1186,6 +1186,45 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
   return (frequency);
 }
 
+static uint32_t get_pllvco(void) {
+	uint32_t pllvco;
+
+	/* Compute PLL clock input */
+	if (__HAL_RCC_GET_PLL_OSCSOURCE() == RCC_PLLSOURCE_HSI) {
+		pllvco = HSI_VALUE;
+	} else if (__HAL_RCC_GET_PLL_OSCSOURCE() == RCC_PLLSOURCE_HSE) {
+		pllvco = HSE_VALUE;
+	} else  {
+		pllvco = 0U;
+	}
+
+	/* f(PLL Source) / PLLM */
+	return pllvco / ((READ_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLM) >> RCC_PLLCFGR_PLLM_Pos) + 1U);
+}
+
+uint32_t HAL_Custom_GetCanPeriphCLKFreq(void) {
+	uint32_t srcclk;
+	uint32_t plln;
+
+	srcclk = READ_BIT(RCC->CCIPR2, RCC_CCIPR2_FDCANSEL);
+
+	if (srcclk == RCC_FDCANCLKSOURCE_PLL) {
+		if (__HAL_RCC_GET_PLLCLKOUT_CONFIG(RCC_PLLQCLK)) {
+			/* f(PLLQ) = f(VCO input) * PLLN / PLLQ */
+			plln = READ_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLN) >> RCC_PLLCFGR_PLLN_Pos;
+			return (get_pllvco() * plln) / ((READ_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ) >> RCC_PLLCFGR_PLLQ_Pos) + 1U);
+		}
+	}
+	else if (srcclk == RCC_FDCANCLKSOURCE_PCLK1) {
+		return HAL_RCC_GetPCLK1Freq();
+	}
+	else if ((HAL_IS_BIT_SET(RCC->CR, RCC_CR_HSERDY)) && (srcclk == RCC_FDCANCLKSOURCE_HSE)) {
+		return HSE_VALUE;
+	}
+
+	return 0;
+}
+
 /**
   * @}
   */
