@@ -1192,7 +1192,10 @@ typedef struct
 
 HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit);
 void              HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit);
+
+/* Try not to use this function, it is actually super heavy. Prefer the following alternatives */
 uint32_t          HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk);
+uint32_t HAL_Custom_GetCanPeriphCLKFreq(void);
 
 /**
   * @}
