@@ -20,10 +20,10 @@ src-$(CONFIG_ARCH_ARM_ST_STM32G0_SERIES) += $(ROOT_DIR)/external/st/hal_g0xx/Src
 src-$(CONFIG_ARCH_ARM_ST_STM32G0_SERIES) += $(ROOT_DIR)/external/st/hal_g0xx/Src/stm32g0xx_hal_rcc.c
 src-$(CONFIG_ARCH_ARM_ST_STM32G0_SERIES) += $(ROOT_DIR)/external/st/hal_g0xx/Src/stm32g0xx_hal_rcc_ex.c
 src-$(CONFIG_ARCH_ARM_ST_STM32G0_SERIES) += $(ROOT_DIR)/external/st/hal_g0xx/Src/stm32g0xx_hal_rtc.c
+src-$(CONFIG_ARCH_ARM_ST_STM32G0_SERIES) += $(ROOT_DIR)/external/st/hal_g0xx/Src/stm32g0xx_hal_rtc_ex.c
 src-$(CONFIG_ARCH_ARM_ST_STM32G0_SERIES) += $(ROOT_DIR)/external/st/hal_g0xx/Src/stm32g0xx_hal_spi.c
 src-$(CONFIG_ARCH_ARM_ST_STM32G0_SERIES) += $(ROOT_DIR)/external/st/hal_g0xx/Src/stm32g0xx_hal_spi_ex.c
 src-$(CONFIG_ARCH_ARM_ST_STM32G0_SERIES) += $(ROOT_DIR)/external/st/hal_g0xx/Src/stm32g0xx_hal_tim.c
 src-$(CONFIG_ARCH_ARM_ST_STM32G0_SERIES) += $(ROOT_DIR)/external/st/hal_g0xx/Src/stm32g0xx_hal_tim_ex.c
 src-$(CONFIG_ARCH_ARM_ST_STM32G0_SERIES) += $(ROOT_DIR)/external/st/hal_g0xx/Src/stm32g0xx_hal_uart.c
 src-$(CONFIG_ARCH_ARM_ST_STM32G0_SERIES) += $(ROOT_DIR)/external/st/hal_g0xx/Src/stm32g0xx_hal_uart_ex.c
-
