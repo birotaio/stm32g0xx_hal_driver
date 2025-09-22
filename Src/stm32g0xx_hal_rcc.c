@@ -215,7 +215,7 @@
   *            - LSI, LSE and RTC clocks
   * @retval HAL status
   */
-HAL_StatusTypeDef HAL_RCC_DeInit(void)
+HAL_StatusTypeDef HAL_RCC_DeInit(enum reset_reset_action rra)
 {
   uint32_t tickstart;
 
